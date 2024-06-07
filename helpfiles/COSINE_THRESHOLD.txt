@@ -1,0 +1,14 @@
+COSINE_THRESHOLD
+
+The value below which the cosine between the features of the selected item
+    and those of the target template is treated as negative.
+
+Specifically, the match between the features of the selected item and the
+    template, cos (item,template), is calculated as:
+
+    match = (cosine - COSINE_THRESHOLD) * COSINE_GAIN, where
+
+    COSINE_GAIN = 1.0/(1.0 - COSINE_THRESHOLD) # so that cosine = 1 --> 1.0
+
+CAUTION: Note that a threshold of 1.0 will result in a division by zero error
+

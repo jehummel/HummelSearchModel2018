@@ -1,0 +1,3 @@
+P_RELEVANT_SAMPLING
+
+The probability of randomly sampling a relevant feature dimension during the automatic pass of search.

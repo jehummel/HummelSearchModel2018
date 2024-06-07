@@ -1,0 +1,3 @@
+REJECTION_THRESHOLD
+
+The negative threshold a search item's integrator must cross in order to be rejected as a nontarget.

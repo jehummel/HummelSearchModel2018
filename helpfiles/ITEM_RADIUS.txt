@@ -1,0 +1,4 @@
+ITEM_RADIUS
+
+The radius (or in the case of a rectangle, half-width) of a
+    search item (in pixels) on the screen.

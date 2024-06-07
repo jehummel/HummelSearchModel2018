@@ -1,0 +1,6 @@
+ITEM_DISTANCE
+
+The minimum distance (in pixels) between items in the
+    display.
+
+This parameter should be 2 * ITEM_RADIUS plus a small buffer.

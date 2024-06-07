@@ -1,0 +1,6 @@
+MIN_SELECTION_PRIORITY
+
+The lowest value to which a search item's selection priority will fall if the item
+  has not yet been fully rejected.
+When rejected, priority, and this p(selection) goes to zero.
+Non-zero priorities go into a pool (a sum) to determine each item's p(selection).

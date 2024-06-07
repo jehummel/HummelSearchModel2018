@@ -1,0 +1,6 @@
+LINEAR_DISTANCE_COST
+
+If True, then the weight from a feature to its integrator decreases as a linear
+    function of distance from fitaction.
+
+If False, then the weight decreases as a decelerating function of distance.

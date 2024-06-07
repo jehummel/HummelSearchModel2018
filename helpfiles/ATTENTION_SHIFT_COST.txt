@@ -1,0 +1,6 @@
+ATTENTION_SHIFT_COST
+
+The cost, in iterations, of an attentional shift.
+
+Note that, unlike an eye movement, automatic processing is NOT
+    suspended durig an attentional shift.

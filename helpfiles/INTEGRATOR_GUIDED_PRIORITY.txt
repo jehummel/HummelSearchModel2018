@@ -1,0 +1,12 @@
+INTEGRATOR_GUIDED_PRIORITY
+
+This parameter corresponds to Alejo's hypothesis that similarity
+    to the target template giudes attention.
+
+The magnitude of this parameter determines the magnitude of that effect:
+    The larger the parameter, the faster the model finds the target.
+    (If it's too large, the effect is both creepy and cute.)
+
+Specifically, on each iteration:
+
+    item.priority += item.integrator * INTEGRATOR_GUIDED_PRIORITY

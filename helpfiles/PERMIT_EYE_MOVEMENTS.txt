@@ -1,0 +1,5 @@
+PERMIT_EYE_MOVEMENTS
+
+If true, the model moves its eyes (fixation) along with its attention.
+
+If false, the model maintains fixation in the center of the display.

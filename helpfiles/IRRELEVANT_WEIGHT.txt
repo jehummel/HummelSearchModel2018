@@ -1,0 +1,4 @@
+IRRELEVANT_WEIGHT
+
+The weighting of irrelevant features in the cosine similarity
+between a selected item and the target template.

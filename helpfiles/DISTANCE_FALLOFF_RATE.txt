@@ -1,0 +1,22 @@
+DISTANCE_FALLOFF_RATE
+
+For use only with the nonlinear distance cost function.
+
+The rate at which feature sampling falls off as a function of the
+    search item's distance from fixation.
+
+This parameter must be calibrated carefully:
+
+The rate of information accumulation is:
+
+    item.dist_wt = 1.0/(1.0 + scaled_distance), where:
+
+    scaled_distance = self.DISTANCE_FALLOFF_RATE * (item.fix_dist/self.DISPLAY_RADIUS), where
+
+    item.fix_dist is the distance (in pixels) between the item and fixation and
+    self.DISPLAY_RADIUS is the radius (in pixels) of the whole visual display
+
+Remember that display size, and therefore distance from fixation, is
+    expressed in pixels on the screen, so that the maximum distance
+    between fixation and any search item is 2 * the radius of the
+    search display.

@@ -1,0 +1,8 @@
+EYE_MOVEMENT_TIME_COST
+
+The cost, in iterations, of an eye movement.
+
+Note that all processing is suspended during an eye movement.
+
+This parameter should be calibrated to ms. once we are able
+    to map iterations in the model into ms in human RTs.

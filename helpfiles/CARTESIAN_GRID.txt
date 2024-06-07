@@ -1,0 +1,5 @@
+CARTESIAN_GRID
+
+If True, the search items are displayed on a Cartesian grid
+
+If False, they are displayed on a polar grid.

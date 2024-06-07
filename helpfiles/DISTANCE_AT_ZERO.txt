@@ -1,0 +1,8 @@
+DISTANCE_AT_ZERO
+
+For use only with the linear cost of feature weighting with distance.
+
+This is the distance from fixation at which the feature weighting goes to zero.
+
+Less than this distance, the weight increases linearly to 1.0 at distance 0.0.
+Greater than or equal to this distance, the weight is zero.

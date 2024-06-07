@@ -1,0 +1,4 @@
+TARGET_ABSENT_COST
+
+The cost, in iterations, for concluding that there is no target in the display
+(a one-time cost, not applied item-by-item).

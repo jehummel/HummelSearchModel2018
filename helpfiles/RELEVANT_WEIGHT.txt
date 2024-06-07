@@ -1,0 +1,4 @@
+RELEVANT_WEIGHT
+
+The weighting of relevant features in the cosine similarity
+between a selected item and the target template.

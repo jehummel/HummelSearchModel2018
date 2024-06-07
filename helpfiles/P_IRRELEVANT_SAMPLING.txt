@@ -1,0 +1,3 @@
+P_IRRELEVANT_SAMPLING
+
+The probability of randomly sampling an irrelevant feature dimension during the automatic pass of search.

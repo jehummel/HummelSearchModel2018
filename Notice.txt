@@ -1,0 +1,1 @@
+This model of visual search was first developed and written by John E Hummel in 2018.

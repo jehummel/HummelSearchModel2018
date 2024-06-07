@@ -4,7 +4,9 @@ __author__ = 'john'
 
 # Model stochastically samples locations, rejecting or accepting them as a function of an accumulator that either crosses threshold or not
 
-# last modified 1/16/19
+# Version 2 (1/17/19): For unattended stimuli, stochastically sample dimensions, with greater weight on relevant (attended) ones
+
+# last modified 1/17/19
 
 # * * * * * * * * * Graphics bullshit * * * * * * * * *
 
@@ -59,6 +61,20 @@ TARGET_MATCH_TRESHOLD  = 2 # the threshold an item's integrator must exceed to b
 REJECTION_THRESHOLD    = -1.0 # -0.5  # the negative threshold an item's integrator must reach to be rejected from search altogether
 
 EXACT_MATCH_THRESHOLD  = 0.01 # euclidean distance below which two vectors are considered an exact match
+
+# feature dimension indices (1/17/19). Check these against make_feature_vector for consistency
+COLOR_DIMENSIONS = (0,1,2,3,4,5,6,7,8,9,10,11)
+SHAPE_DIMENSIONS = (12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28)
+
+# for random sampling during inattention
+P_RELEVANT_SAMPLING   = 0.7 # 1.0 # 0.5 # p(sampling) a relevant dimension in unattended processing
+P_IRRELEVANT_SAMPLING = 0.05 # 0 # 0.05 # p(sampling) an irrelevant dimension in unattended processing
+
+# for feature weighting under selected processing
+RELEVANT_WEIGHT   = 1.0 # how much relevant dimensions contribute to similarity
+IRRELEVANT_WEIGHT = 0.1 # how much irrelevant dimensions contribute to similarity
+
+EXACT_MATCH_COST  = 1 # how many iterations does it take to compute the final, exact match for target verification
 
 class VisualItem(object):
     """
@@ -120,7 +136,46 @@ def randomly_select_item(all_items):
     # 4) if you get to this point, you found nothing: return None
     return None
 
-def feature_similarity(vect1,vect2):
+def random_sample_feature_match(vect1,vect2,relevant):
+    # for unattended processing: decide vect1-vect2 similarity by randomly sampling
+    #   dimensions
+    # return num_matches - num_mismatches
+    match = 0
+    len1 = 0
+    len2 = 0
+    for i in xrange(len(vect1)):
+        # randomly sample dimension i depending on whether it's in the relevant set
+        if i in relevant:
+            do_sample = random.random() < P_RELEVANT_SAMPLING
+        else:
+            do_sample = random.random() < P_IRRELEVANT_SAMPLING
+        if do_sample:
+            # sample this dimension:
+
+            # Version 1:
+            # if the vectors both 1, then add 1;
+            # if they are different, then subtract 1
+            # if vect1[i] != 0 or vect2[i] != 0: # if at least one is active...
+            #     match += (2*vect1[i]-1) * (2*vect2[i]-1) # +1 if same, -1 if diff
+
+            # Version2: simple product
+            match += vect1[i] * vect2[i]
+
+            # Version 2b: cosine
+            len1 += pow(vect1[i], 2)
+            len2 += pow(vect2[i], 2)
+    # now normalize the match score by the max possible
+    match /= len(relevant)
+
+    # or (2b) by the product of the lengths
+    # len1 = pow(len1,0.5)
+    # len2 = pow(len2,0.5)
+    # if len1 * len2 > 0:
+    #     match /= (len1 * len2)
+    return match
+
+
+def feature_similarity(vect1,vect2,relevant):
     # returns the vector similarity of two vector1 and vector2
     # could be cosine, dot product, whatever...
     # for now, we're gonna do cosine
@@ -128,9 +183,14 @@ def feature_similarity(vect1,vect2):
     len2        = 0.0 # length of vector2
     dot_product = 0.0
     for i in xrange(len(vect1)):
-        len1 += pow(vect1[i],2)
-        len2 += pow(vect2[i],2)
-        dot_product += vect1[i] * vect2[i]
+        # determine feature weight based on relevance
+        if i in relevant: # if i is a feature along the relevant dimension
+            weight = RELEVANT_WEIGHT
+        else:
+            weight = IRRELEVANT_WEIGHT
+        len1 += pow(vect1[i] * weight,2)
+        len2 += pow(vect2[i] * weight,2)
+        dot_product += vect1[i] * weight * vect2[i] * weight
     len_product = len1 * len2
     if len_product > 0:
         return dot_product/len_product
@@ -138,11 +198,13 @@ def feature_similarity(vect1,vect2):
         print "Error! One or more vectors has length zero."
         return None
 
-def exact_match(vect1,vect2):
-    # returns true if two vectors exactly match; False otherwise
+def exact_match(vect1,vect2,relevant):
+    # returns true if two vectors exactly match on relevant dimensions; False otherwise
     distance = 0.0
     for i in xrange(len(vect1)):
-        distance += pow((vect1[i] - vect2[i]),2)
+        if i in relevant:
+            # count relevant dimensions only!
+            distance += pow((vect1[i] - vect2[i]),2)
     distance = pow(distance,0.5)
 
     if distance < EXACT_MATCH_THRESHOLD:
@@ -150,11 +212,13 @@ def exact_match(vect1,vect2):
     else:
         return False
 
-def process_parallel(item,template):
+def process_parallel(item,template,relevant):
     # this is the processing that happens in parallel across all items
     # this method will be called in a loop
     # get item/target similarity
-    similarity = feature_similarity(item.features, template.features)
+    # similarity = feature_similarity(item.features, template.features)
+    # relevant is the set of relevant dimensions, e.g., color or shape
+    similarity = random_sample_feature_match(item.features,template.features,relevant)
 
     # use similarity to update item threshold
     item.integrator += similarity * random.random()
@@ -166,31 +230,34 @@ def process_parallel(item,template):
         item.priority = 0.0
 
 
-def process_item(item,template,max_iterations):
+def process_item(item,template,relevant,max_iterations=10):
     # this is what happens when an item is randomly selected:
     # it is compared to the target template and its integrator is either incremented or decremented
+    #   until threshold crossed or max_iterations spent
     """
     Compare one item to the target template for num_iterations iterations
     without attention, num_iterations = 1 (Alejo & Simona's "stage 1")
     with attention, num_iterations = until item crosses upper or lower threshold
     :param item: 
     :param template: 
-    :param max_iterations: 
+    :param max_iterations:
+    :param relevant: a lst of the dimensions that are relevant for the task
     :return: num_iterations actually processed
     """
     num_iterations = 0
     all_done       = False
     target_found   = False
 
+    # get item/target similarity
+    #   (get it before entering loop because it will not change: no need to do each time)
+    similarity = feature_similarity(item.features, template.features, relevant)
+
+    # DIAG
+    # print 'similarity = %.3f'%similarity
+
     # process the item until all_done; then return num_iterations and target_found
     while not all_done:
         num_iterations += 1
-
-        # get item/target similarity
-        similarity = feature_similarity(item.features,template.features)
-
-        # DIAG
-        # print 'similarity = %.3f'%similarity
 
         # use similarity to update item threshold
         item.integrator += similarity
@@ -203,16 +270,10 @@ def process_item(item,template,max_iterations):
             item.color    = GRAY
             all_done      = True
 
-            # DIAG
-            # print 'Item rejected, iteration ',num_iterations
-
         elif item.integrator > TARGET_MATCH_TRESHOLD:
             # this is very likely a target: double check for exact match
-            target_found = exact_match(item.features,template.features)
-            num_iterations += 1 # add an extra iteration cost fo this comparison
-
-            # DIAG
-            # print 'Match threshold exceeded ', num_iterations
+            target_found = exact_match(item.features,template.features,relevant)
+            num_iterations += EXACT_MATCH_COST # add an extra iteration cost for this comparison
 
         # check to see whether all_done: did we find the target? or is num_iterations >= max_iterations
         if target_found or num_iterations >= max_iterations:
@@ -279,7 +340,7 @@ def show_display():
     """
     pass
 
-def run_search(display, target_template):
+def run_search(display, target_template, relevant):
     """
     search the display until target found or all items rejected
     :return: num_iterations (to find target or say no) and whether response was correct
@@ -291,14 +352,14 @@ def run_search(display, target_template):
 
         # 0) process all in parallel
         for item in display:
-            process_parallel(item,target_template)
+            process_parallel(item,target_template, relevant)
 
         # 1) randomly select one item from the set remaining...
         selected = randomly_select_item(display)
 
         # 2) evaluate it
         #                                     process_item(item,template,max_iterations)
-        (iteration_increment, target_found) = process_item(selected, target_template, 10)
+        (iteration_increment, target_found) = process_item(selected, target_template, relevant)
 
         # 2.2) update iteration counter
         iteration += iteration_increment
@@ -321,8 +382,11 @@ def run_search(display, target_template):
 def simulation1(num_lures):
     # an easy search: red vertical target among green horizontal distractors
 
-    # 1) make the search template
+    # 1) make the search template...
     template = VisualItem(None, make_feature_vector('red', 'vertical'))
+
+    # 1.1) ... and define the relevant dimension(s)
+    relevant = COLOR_DIMENSIONS
 
     # 2) make the search display
     search_display = []
@@ -334,7 +398,7 @@ def simulation1(num_lures):
     search_display.extend(make_search_items(num_lures, 'green', 'horizontal', search_display, [0, 0], 'Target', True))
 
     # 3) run the search
-    (RT, target_found) = run_search(search_display, template)
+    (RT, target_found) = run_search(search_display, template, relevant)
 
     if not target_found:
         print 'Error: Target not found'
@@ -364,7 +428,7 @@ def mean_and_sem(data):
 
 # * * * * * * * * * * Main Body * * * * * * * * * *
 
-NumRunsPer = 20
+NumRunsPer = 200
 
 lure_nums = (3,6,9,12,15)
 
